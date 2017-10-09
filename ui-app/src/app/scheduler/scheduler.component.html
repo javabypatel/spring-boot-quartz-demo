@@ -1,0 +1,208 @@
+<h4>Spring Boot + Quartz + Angular 2</h4>
+<br><br>
+<form [formGroup]="schedulerForm" novalidate autocomplete="off">
+    <table>
+        <tr>
+            <td>Enter Job Name:</td>
+            <td>            
+                <input type="text" 
+                    name="jobName" 
+                    id="jobName"
+                    class="form-control"
+                    formControlName="jobName"
+                    style="width:100px"
+                    [readonly]="isEditMode"/>
+            </td>
+            <td>       
+                <a class="btn btn-primary" (click)="checkJobExistWith(schedulerForm.value.jobName)">Check Job with Name exist</a>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>  
+                Status: <b><i>{{jobNameStatus}}</i></b>
+            </td>
+        </tr>
+    </table>
+        <br/>
+    <table>
+        <tr>
+            <td>Enter Date and Time:</td>
+            <td>
+                Year:
+                <input type="text" 
+                    name="year" 
+                    id="year"
+                    class="form-control"
+                    formControlName="year"
+                    style="width:100px"/>
+            </td>
+            <td>
+                Month:
+                <input type="text" 
+                    name="month" 
+                    id="month"
+                    class="form-control"
+                    formControlName="month"
+                    style="width:100px"/>
+            </td>
+            <td>
+                Day:
+                <input type="text" 
+                    name="day" 
+                    id="day"
+                    class="form-control"
+                    formControlName="day"
+                    style="width:100px"/>
+            </td>
+            <td>
+                Hour(24-hour):
+                <input type="text" 
+                    name="hour" 
+                    id="hour"
+                    class="form-control"
+                    formControlName="hour"
+                    style="width:100px"/>
+            </td>
+            <td>
+                Minute:
+                <input type="text" 
+                    name="minute" 
+                    id="minute"
+                    class="form-control"
+                    formControlName="minute"
+                    style="width:100px"/>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td style="padding: 5px;" colspan="5">
+                <b>If given date/time is invalid then job will not get scheduled.
+                If given date is older than current date then job will be started immediately</b> 
+            </td>
+        </tr>
+    </table>
+    <br/><br/>
+    <table>
+        <tr>
+            <td style="padding: 5px;">
+                Enter Cron expression
+            </td>
+            <td>
+                <input type="text" 
+                    name="cronExpression" 
+                    id="cronExpression"
+                    class="form-control"
+                    formControlName="cronExpression"
+                    style="width:200px"/>
+            </td>
+            <td>Select Sample Cron:</td>
+            <td> 
+                <select (change)="cronChange($event.target.value)" 
+                    class="form-control">
+                    <option value="0 0/1 * 1/1 * ? *">Every 1 minutes</option>
+                    <option value="0 0 10 1/1 * ? *">Every day at 10 AM</option>
+                    <option value="0 0 0/1 1/1 * ? *">Every hour starting 10 AM</option>
+                    <option value="0 0 10 ? * TUE,THU *">Every week Tue and Thur at 10 AM</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td colspan="2">
+                <b>If Cron expression is blank then it will be treated as One time job</b> 
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td style="padding: 5px;" colspan="2">
+                
+                <!-- Used only in case of Adding New Job -->
+                <input type="button" 
+                    name="submit" 
+                    id="submit" 
+                    class="btn btn-primary" 
+                    (click)="scheduleJob()"
+                    *ngIf="!isEditMode" 
+                    value="Submit"/>
+                
+                <!-- Used only in case of Edit Job -->
+                <input type="button" 
+                    name="submit" 
+                    id="submit" 
+                    class="btn btn-primary" 
+                    (click)="updateJob()"
+                    *ngIf="isEditMode"
+                    value="Update"/>
+
+                <input type="button" 
+                    name="submit" 
+                    id="submit" 
+                    class="btn btn-primary" 
+                    (click)="cancelEdit()"
+                    *ngIf="isEditMode"
+                    value="Cancel"/>
+            </td>
+        </tr>
+    </table>
+    
+</form>
+<br/><br/>
+<div>
+    <label>Job List:</label>
+    <br/><br/>
+    <label style="color: red">
+        Note:<br/>
+        1. Completed jobs will not be shown in listing.
+        <br/> 
+        2. If job is in "RUNNING" state then no action like "Pause, Resume, Delete, Edit" is allowed. </label>
+    <br/><br/>
+
+    <table class="table table-responsive table-hover" border="1" style="width : 100%;">
+        <thead>
+            <th>Job Name</th>
+            <th>Job Schedule Time</th>
+            <th>Job Last Fired Time</th>
+            <th>Job Next Fire Time</th>
+            <th>Action</th>
+            <th>Job Status</th>
+        </thead>
+        <tbody>
+            <ng-container *ngFor="let jobRec of jobRecords;let i=index"> 
+                <tr>
+                    <td>{{jobRec.jobName}}</td>
+                    <td>{{jobRec.scheduleTime | date: 'dd/MM/yyyy HH:mm:ss'}}</td>
+                    <td>{{jobRec.lastFiredTime | date: 'dd/MM/yyyy HH:mm:ss'}}</td>
+                    <td>{{jobRec.nextFireTime | date: 'dd/MM/yyyy HH:mm:ss'}}</td>
+                    <td>
+                        <button class="btn btn-primary" 
+                            [disabled]="jobRec.jobStatus == 'RUNNING'" 
+                            (click)='startJobNow(jobRec.jobName)'>Start Job Now</button> |
+
+                        <button class="btn btn-primary" 
+                            [disabled]="jobRec.jobStatus != 'SCHEDULED'" 
+                            (click)='pauseJob(jobRec.jobName)'>Pause Job</button> |
+
+                        <button class="btn btn-primary" 
+                            [disabled]="jobRec.jobStatus != 'PAUSED'" 
+                            (click)='resumeJob(jobRec.jobName)'>Resume Job</button> |
+
+                        <button class="btn btn-primary" 
+                            [disabled]="jobRec.jobStatus == 'RUNNING'" 
+                            (click)='deleteJob(jobRec.jobName)'>Delete Job</button> |
+
+                        <button class="btn btn-primary" 
+                            [disabled]="jobRec.jobStatus != 'RUNNING'" 
+                            (click)='stopJob(jobRec.jobName)'>Stop Job</button> |
+
+                        <button class="btn btn-primary" 
+                            [disabled]="jobRec.jobStatus == 'RUNNING'" 
+                            (click)='editJob(jobRec)'>Edit Job</button>
+                    </td>
+                    <td>{{jobRec.jobStatus}}</td>
+                </tr>
+            </ng-container>
+        </tbody>
+    </table>
+</div>
