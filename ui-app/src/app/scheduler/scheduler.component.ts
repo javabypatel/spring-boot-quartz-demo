@@ -37,12 +37,10 @@ export class SchedulerComponent implements OnInit, OnDestroy {
     this.setDate();
     this.getJobs();
 
-    /*
     let timer = Observable.timer(2000,3000);
     this.jobRefreshTimerSubscription = timer.subscribe(t=>{
       this.getJobs();
-    });
-    */
+    }); 
   }
 
   ngOnDestroy() {

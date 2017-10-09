@@ -308,12 +308,16 @@ public class JobServiceImpl implements JobService{
 					//get job's trigger
 					List<Trigger> triggers = (List<Trigger>) scheduler.getTriggersOfJob(jobKey);
 					Date scheduleTime = triggers.get(0).getStartTime();
-
+					Date nextFireTime = triggers.get(0).getNextFireTime();
+					Date lastFiredTime = triggers.get(0).getPreviousFireTime();
+					
 					Map<String, Object> map = new HashMap<String, Object>();
 					map.put("jobName", jobName);
 					map.put("groupName", jobGroup);
 					map.put("scheduleTime", scheduleTime);
-
+					map.put("lastFiredTime", lastFiredTime);
+					map.put("nextFireTime", nextFireTime);
+					
 					if(isJobRunning(jobName)){
 						map.put("jobStatus", "RUNNING");
 					}else{
